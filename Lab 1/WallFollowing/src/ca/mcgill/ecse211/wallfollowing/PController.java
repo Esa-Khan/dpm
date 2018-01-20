@@ -48,6 +48,41 @@ public class PController implements UltrasonicController {
     }
 
     // TODO: process a movement based on the us distance passed in (P style)
+    // Delcaring local variables
+    int deltaSpeed = 1;
+	int error = 0;
+    Boolean left = false;
+    
+    // Calculate distance error
+    error = distance - bandCenter;
+    
+    // Decide to move left or right
+    if ((error) < 0) left = true;
+    
+    error = Math.abs(error);
+    // Check if error greater than bandwidth
+    if (error > bandWidth) {
+    	
+    	// Calculate speed change of outer wheel
+        deltaSpeed = (int) (400 - 200/error);
+        if (deltaSpeed >= MOTOR_SPEED) {
+          deltaSpeed = 400;
+        }
+
+    	
+    	
+    	
+    	
+    	// Go in respective direction
+		if (left) {
+        	WallFollowingLab.leftMotor.setSpeed((400 - deltaSpeed));
+        	WallFollowingLab.leftMotor.forward();
+        } else {
+        	WallFollowingLab.leftMotor.setSpeed(deltaSpeed);
+        	WallFollowingLab.leftMotor.forward();
+        }
+		}
+  
   }
 
 

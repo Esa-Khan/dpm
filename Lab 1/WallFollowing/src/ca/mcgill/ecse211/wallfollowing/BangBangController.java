@@ -29,23 +29,21 @@ public class BangBangController implements UltrasonicController {
     this.distance = distance;
     // TODO: process a movement based on the us distance passed in (BANG-BANG style)
     // Declare local variables
-    int deltaSpeed = 180, error = 0;
+    int deltaSpeed = 190, error = 0;
     Boolean left = false;
     
     // Calculate distance error
     error = distance - bandCenter;
     
     // Decide to move left or right
-    if ((distance - bandCenter) < 0) left = true;
+    if (error < 0) left = true;
     
     // Check if error greater than bandwidth
     if (Math.abs(error) > bandwidth) {
 		if (left) {
         	WallFollowingLab.leftMotor.setSpeed(motorHigh - deltaSpeed);
-        	WallFollowingLab.leftMotor.forward();
         } else {
         	WallFollowingLab.leftMotor.setSpeed(motorHigh + deltaSpeed);
-        	WallFollowingLab.leftMotor.forward();
         }
     }
   }
