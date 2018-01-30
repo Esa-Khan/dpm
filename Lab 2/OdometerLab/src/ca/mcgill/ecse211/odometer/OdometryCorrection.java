@@ -23,7 +23,7 @@ public class OdometryCorrection implements Runnable {
 	private Odometer odometer;
 
 	// Define colorsensor
-	EV3ColorSensor colSensor = new EV3ColorSensor(SensorPort.S1);
+	Port lightPort = LocalEV3.get().getPort("S1");
 	// Define the tile size
 	private static final double TILE_SIZE = 30.48;
 
@@ -58,8 +58,13 @@ public class OdometryCorrection implements Runnable {
 			correctionStart = System.currentTimeMillis();
 
 			// TODO Trigger correction (When do I have information to correct?)
+			// Set color sensor object
+			EV3ColorSensor colorSensor = new EV3ColorSensor(lightPort);
+			SampleProvider lightSample = colorSensor.getRedMode();
+			int sampleSize = lightSample.sampleSize();            
+			float[] sample = new float[sampleSize];
+			
 			// Check what colour the light sensor detects
-			colSensor.setFloodlight(Color.RED);
 			SensorMode lightVal = colSensor.getColorID();
 			
 			String printLight = "Light level: " + lightVal;
