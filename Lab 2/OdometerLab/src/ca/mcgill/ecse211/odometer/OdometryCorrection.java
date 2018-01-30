@@ -23,7 +23,11 @@ public class OdometryCorrection implements Runnable {
 	private Odometer odometer;
 
 	// Define colorsensor
-	Port lightPort = LocalEV3.get().getPort("S1");
+	private static final Port lightPort = SensorPort.S1;
+	// Set color sensor object
+	private static final EV3ColorSensor colorSensor = new EV3ColorSensor(lightPort);
+	private static final SampleProvider lightSample = colorSensor.getRedMode();
+
 	// Define the tile size
 	private static final double TILE_SIZE = 30.48;
 
@@ -49,31 +53,24 @@ public class OdometryCorrection implements Runnable {
 		long correctionStart, correctionEnd;
 
 		// Keep track of how many lines have passed
-		int passedLines = 0;
+		int passedLines = 0, linesY = 0, linesX = 0;
 
 		// Store previously stored values
-		double origX = 0, origY = 0, origTh = 0;
+		double origX = -TILE_SIZE / 2, origY = -TILE_SIZE / 2, origTh = 0;
+
+		// Setup sampler
+		colorSensor.setFloodlight(Color.RED);
+		int sampleSize = lightSample.sampleSize();
+		float[] sample = new float[sampleSize];
 
 		while (true) {
 			correctionStart = System.currentTimeMillis();
 
 			// TODO Trigger correction (When do I have information to correct?)
-			// Set color sensor object
-			EV3ColorSensor colorSensor = new EV3ColorSensor(lightPort);
-			SampleProvider lightSample = colorSensor.getRedMode();
-			int sampleSize = lightSample.sampleSize();            
-			float[] sample = new float[sampleSize];
-			
-			// Check what colour the light sensor detects
-			SensorMode lightVal = colSensor.getColorID();
-			
-			String printLight = "Light level: " + lightVal;
-			LCD.drawString(printLight, 0, 3);
-			
+			lightSample.fetchSample(sample, 0);
+
 			// If detected colour is black (passes a line)
-			if (false) {
-				// Beep when black line passed
-				Sound.beep();
+			if (sample[0] < 0.3) {
 
 				// Get current X, Y and Theta values of odometer
 				double data[] = null;
@@ -84,58 +81,99 @@ public class OdometryCorrection implements Runnable {
 					e1.printStackTrace();
 				}
 
+				// Beep when black line passed
+				Sound.beep();
+
 				// TODO Calculate new (accurate) robot position
 				// Check if robot has started moving (to avoid false color sensor positives)
-				if (data[1] > 10) {
-					// Increment when line passed
-					passedLines++;
 
-					// Print number of lines passed
-					String print = "Lines Passed: " + passedLines;
-					LCD.drawString(print, 0, 4);
-					
-					
-					
-					if (data[2] > 345 || data[2] < 15) {
-						origTh = 0;
-						if (data[1] < (TILE_SIZE/2 + 15)) {
-							origY = 0;
-						} else {
-							origY += TILE_SIZE;
-						}
-					} else if (data[2] > 75 || data[2] < 105) {
-						origTh = 90;
-						if (data[0] < (TILE_SIZE/2 + 15)) {
-							origX = 0;
-						} else {
-							origX += TILE_SIZE;
-						}
-					} else if (data[2] > 165 || data[2] < 195) {
-						origTh = 180;
-						if (data[1] < origY - 15) {
-							origY -= TILE_SIZE / 2;
-						} else {
-							origY -= TILE_SIZE;
-						}
-					} else if (data[2] > 255 || data[2] < 285) {
-						origTh = 270;
-						if (data[0] < origX - 15) {
-							origX -= TILE_SIZE / 2;
-						} else {
-							origX -= TILE_SIZE;
-						}
+				// Increment when line passed
+				passedLines++;
+				// Print passed lines
+				String print = "Lines passed: " + passedLines;
+				LCD.drawString(print, 0, 4);
+
+				// If moving up Y axis
+				if (data[2] > 345 || data[2] < 15) {
+					// Increment number of lines perpendicular to Y-axis (lines crossed when going across Y-axis)
+					linesY++;
+					origTh = 0;
+					// If first line, set Y to 0
+					if (passedLines == 1) {
+						origY = 0;
+					// Else increment tile size
+					} else {
+						origY += TILE_SIZE;
 					}
-
-					// TODO Update odometer with new calculated (and more accurate) vales
-					odometer.setXYT(origX, origY, origTh);
-
-					// Pause thread so that it does not read the same black line twice
-					try {
-						Thread.sleep(20);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					// update only y on odometer
+					odometer.setXYT(data[0], origY, origTh);
+				
+				// If moving up X axis
+				} else if (data[2] > 75 && data[2] < 105) {
+					// Increment nummber of lines perpendicular to X-axis (lines crossed when going across X-axis)
+					linesX++;
+					origTh = 90;
+					// If first line of X-axis passed set X to 0
+					if (data[0] < 10) {
+						origX = 0;
+					// Otherwise increment tile size
+					} else {
+						origX += TILE_SIZE;
 					}
+					// Update odometer for just X
+					odometer.setXYT(origX, data[1], origTh);
+
+				// If moving down Y axis
+				} else if (data[2] > 165 && data[2] < 195) {
+					origTh = 180;
+					// If first line down Y-axis, do nothing (set the origY as the Y coordinate)
+					if (data[1] > origY) {
+
+					// If not first line, decrement tile size
+					} else if (linesY > 1) {
+						origY -= TILE_SIZE;
+					} else {
+					// If last line, set to zero
+						origY = 0;
+					}
+					linesY--;
+					odometer.setXYT(data[0], origY, origTh);
+				
+				// If moving down X axis
+				} else if (data[2] > 255 && data[2] < 285) {
+					origTh = 270;
+					
+					// If first line down X-axis, do nothing (set the origX as the X-coordinate)
+					if (data[0] > origX) {
+
+					// If not first line, decrement tile size
+					} else if (linesX > 1) {
+						origX -= TILE_SIZE;
+					// If last line, set to zero
+					} else {
+						origX = 0;
+					}
+					linesX--;
+					odometer.setXYT(origX, data[1], origTh);
+				}
+
+				// Print updated values
+				String printX = "X: " + origX;
+				LCD.drawString(printX, 0, 5);
+
+				String printY = "Y: " + origY;
+				LCD.drawString(printY, 0, 6);
+
+				String printTh = "Th: " + origTh;
+				LCD.drawString(printTh, 0, 7);
+
+
+				// Pause thread so that it does not read the same black line twice
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 
 			}
