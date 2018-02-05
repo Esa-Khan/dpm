@@ -82,16 +82,13 @@ public class OdometryCorrection implements Runnable {
 				}
 
 				// Beep when black line passed
+				Sound.setVolume(1);
 				Sound.beep();
 
-				// TODO Calculate new (accurate) robot position
 				// Check if robot has started moving (to avoid false color sensor positives)
 
 				// Increment when line passed
 				passedLines++;
-				// Print passed lines
-				String print = "Lines passed: " + passedLines;
-				LCD.drawString(print, 0, 4);
 
 				// If moving up Y axis
 				if (data[2] > 345 || data[2] < 15) {
@@ -161,16 +158,6 @@ public class OdometryCorrection implements Runnable {
 					linesX--;
 					odometer.setXYT(origX, data[1], origTh);
 				}
-
-				// Print updated values
-				String printX = "X: " + origX;
-				LCD.drawString(printX, 0, 5);
-
-				String printY = "Y: " + origY;
-				LCD.drawString(printY, 0, 6);
-
-				String printTh = "Th: " + origTh;
-				LCD.drawString(printTh, 0, 7);
 
 
 				// Pause thread so that it does not read the same black line twice
