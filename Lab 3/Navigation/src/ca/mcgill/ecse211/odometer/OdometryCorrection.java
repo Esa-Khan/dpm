@@ -23,7 +23,7 @@ public class OdometryCorrection implements Runnable {
 	private Odometer odometer;
 
 	// Define colorsensor
-	private static final Port lightPort = SensorPort.S1;
+	private static final Port lightPort = LocalEV3.get().getPort("S1");
 	// Set color sensor object
 	private static final EV3ColorSensor colorSensor = new EV3ColorSensor(lightPort);
 	private static final SampleProvider lightSample = colorSensor.getRedMode();
