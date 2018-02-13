@@ -3,13 +3,13 @@ package ca.mcgill.ecse211.lab4;
 import ca.mcgill.ecse211.lab4.Display;
 import ca.mcgill.ecse211.odometer.Odometer;
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
-import ca.mcgill.ecse211.odometer.OdometryCorrection;
 import lejos.hardware.Button;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.port.SensorPort;
+import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorModes;
 import lejos.robotics.SampleProvider;
@@ -45,7 +45,6 @@ public class Localisation extends Thread {
 
 			// Odometer related objects
 			Odometer odometer = Odometer.getOdometer(leftMotor, rightMotor, TRACK, WHEEL_RAD);
-			OdometryCorrection odometryCorrection = new OdometryCorrection();
 
 			Display odometryDisplay = new Display(lcd); // No need to change
 
@@ -57,7 +56,9 @@ public class Localisation extends Thread {
 
 			USLocalisation USLocal = new USLocalisation(leftMotor, rightMotor, TRACK, WHEEL_RAD);
 			LSLocalisation LSLocal = new LSLocalisation(leftMotor, rightMotor, TRACK, WHEEL_RAD);
-
+			
+			LSLocal.lsLocalise();
+			
 			if (option == Button.ID_LEFT) {
 				USLocal.fallingEdge();
 			} else {
@@ -65,7 +66,7 @@ public class Localisation extends Thread {
 			}
 			Button.waitForAnyPress();
 			usPoll.interrupt();
-			LSLocal.lsLocalise();
+
 
 		} else {
 			System.exit(0);

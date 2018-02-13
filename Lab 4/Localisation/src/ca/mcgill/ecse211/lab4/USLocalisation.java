@@ -54,8 +54,8 @@ public class USLocalisation extends UltraSonicPoller {
 			i++;
 			// Upper limit of distance since sensor reads "infinity" if no object detected
 			// near it
-			if (distance > 2.5)
-				distance = (float) 2.5;
+			if (distance > 2.2)
+				distance = (float) 2.2;
 			d += distance;
 		}
 		// Take average of all readings
@@ -141,8 +141,8 @@ public class USLocalisation extends UltraSonicPoller {
 			i++;
 			// Upper limit of distance since sensor reads "infinity" if no object detected
 			// near it
-			if (distance > 2.5)
-				distance = (float) 2.5;
+			if (distance > 2.2)
+				distance = (float) 2.2;
 			d += distance;
 		}
 		// Take average of all readings
@@ -222,7 +222,7 @@ public class USLocalisation extends UltraSonicPoller {
 		}
 
 		if (angle1 < angle2) {
-			deltaTh = 75 - (angle1 + angle2) / 2;
+			deltaTh = 45 - (angle1 + angle2) / 2;
 		} else {
 			deltaTh = 225 - (angle1 + angle2) / 2;
 		}

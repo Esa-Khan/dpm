@@ -2,10 +2,14 @@ package ca.mcgill.ecse211.lab4;
 
 import ca.mcgill.ecse211.odometer.Odometer;
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
+import lejos.hardware.ev3.LocalEV3;
+import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
+import lejos.hardware.sensor.SensorModes;
 import lejos.robotics.Color;
 import lejos.robotics.SampleProvider;
 
@@ -14,19 +18,19 @@ public class LSLocalisation extends UltraSonicPoller {
 	public static EV3LargeRegulatedMotor leftMotor;
 	public static EV3LargeRegulatedMotor rightMotor;
 
-	public static final Port lightPort = SensorPort.S1;
-
-	
 	// Initialize variables
 	public static double WHEEL_RAD = 0;
 	public static double TRACK = 0;
 
 	// Light threshold to detect a black sensor
 	private static double lightThreshold = 0.20;
+	@SuppressWarnings("resource") // Because we don't bother to close this resource
+	public static final EV3ColorSensor lightPort = new EV3ColorSensor(LocalEV3.get().getPort("S1"));
+	private static final SampleProvider lightSample = lightPort.getRedMode();
 
 	// Speeds of motors
-	private static int ROTATE_SPEED = 80;
-	private static int FORWARD_SPEED = 160;
+	private static int ROTATE_SPEED = 40;
+	private static int FORWARD_SPEED = 80;
 
 	// Difining motor class variables
 	public LSLocalisation(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, double TRACK,
@@ -41,22 +45,22 @@ public class LSLocalisation extends UltraSonicPoller {
 		double[] odometer = { 0, 0, 0 };
 		double len = 0, centreDist = 0;
 
-		// Set color sensor object
-		@SuppressWarnings("resource") // Because we don't bother to close this resource
-		final EV3ColorSensor colorSensor = new EV3ColorSensor(lightPort);
-		final SampleProvider lightSample = colorSensor.getRedMode();
+		leftMotor.setSpeed(FORWARD_SPEED);
+		rightMotor.setSpeed(FORWARD_SPEED);;
 		
 		leftMotor.forward();
 		rightMotor.forward();
 
 		// Setup sampler
-		colorSensor.setFloodlight(Color.RED);
+		lightPort.setFloodlight(Color.RED);
 		int sampleSize = lightSample.sampleSize();
 		float[] sample = new float[sampleSize];
 
 		while (true) {
 			lightSample.fetchSample(sample, 0);
-
+			String print = "Light: " + sample[0];
+			LCD.drawString(print, 0, 7);
+			
 			while (sample[0] > lightThreshold) {
 				try {
 					Thread.sleep(100);
